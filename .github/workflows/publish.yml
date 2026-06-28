@@ -8,6 +8,8 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-and-push:
@@ -31,6 +33,15 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+
+      - name: Verify tags were generated
+        run: |
+          if [ -z "$DOCKER_TAGS" ]; then
+            echo "ERROR: No Docker tags generated from '${{ github.ref_name }}'. Tag must be valid semver (e.g. v1.2.3)."
+            exit 1
+          fi
+        env:
+          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
