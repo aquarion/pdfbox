@@ -44,8 +44,8 @@ verify_sha512 "${PDFBOX_LOC}" "${EXPECTED_HASH}"
 
 verify_pgp_key "${CANONICAL_BASE}/${JAR_FILE}.asc" "$PDFBOX_KEYS_URL" "${PDFBOX_LOC}"
 
-# Apache artifact — verified via canonical Apache Maven KEYS file
-get_latest_and_download "org.apache.pdfbox" "jbig2-imageio" "$EXTRA_JAVA_LIBS_LOC" "$MAVEN_KEYS_URL"
+# Apache PDFBox artifact — signed with PDFBox committer key, use PDFBox KEYS file
+get_latest_and_download "org.apache.pdfbox" "jbig2-imageio" "$EXTRA_JAVA_LIBS_LOC" "$PDFBOX_KEYS_URL"
 
 # jai-imageio artifacts — both signed by Stian Soiland-Reyes
 get_latest_and_download "com.github.jai-imageio" "jai-imageio-core" "$EXTRA_JAVA_LIBS_LOC" "" "$JAI_IMAGEIO_FPR"

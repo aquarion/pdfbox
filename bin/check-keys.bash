@@ -13,7 +13,7 @@ set -o pipefail
 exec 1>&2
 
 WARNING_DAYS="${WARNING_DAYS:-90}"
-KEYSERVER="hkps://keyserver.ubuntu.com"
+KEYSERVERS=("hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org" "hkp://pgp.mit.edu")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/fingerprints.lib.bash"
@@ -78,7 +78,12 @@ import_keys_file() {
 
 import_from_keyserver() {
     local fpr="$1"
-    gpg --quiet --keyserver "$KEYSERVER" --recv-keys "$fpr" 2>/dev/null || true
+    for ks in "${KEYSERVERS[@]}"; do
+        if gpg --quiet --keyserver "$ks" --recv-keys "$fpr" 2>/dev/null; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 # Returns the signing key fingerprint embedded in a detached .asc file.

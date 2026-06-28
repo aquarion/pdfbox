@@ -48,7 +48,6 @@ function verify_pgp_key_keyserver {
     local asc_url="$1"
     local file_loc="$2"
     local expected_fpr="$3"   # full 40-char fingerprint; may be primary key or subkey
-    local keyserver="${4:-hkps://keyserver.ubuntu.com}"
 
     if [[ -z "$expected_fpr" ]]; then
         echo "ERROR: expected_fpr must be provided for keyserver PGP verification." >&2
@@ -66,11 +65,20 @@ function verify_pgp_key_keyserver {
         exit 1
     }
 
-    echo "Verifying PGP signature for ${file_loc} (pinned key ${expected_fpr} via ${keyserver})..."
-    gpg --keyserver "$keyserver" --recv-keys "$expected_fpr" || {
-        echo "ERROR: Failed to fetch signing key $expected_fpr from $keyserver" >&2
+    local keyservers=("hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org" "hkp://pgp.mit.edu")
+    local fetched=0
+    for ks in "${keyservers[@]}"; do
+        echo "Verifying PGP signature for ${file_loc} (pinned key ${expected_fpr} via ${ks})..."
+        if gpg --keyserver "$ks" --recv-keys "$expected_fpr" 2>/dev/null; then
+            fetched=1
+            break
+        fi
+        echo "Key not found on ${ks}, trying next..." >&2
+    done
+    if [[ $fetched -eq 0 ]]; then
+        echo "ERROR: Failed to fetch signing key $expected_fpr from any keyserver" >&2
         exit 1
-    }
+    fi
 
     gpg --verify "$asc_file" "$file_loc" || {
         echo "ERROR: PGP signature verification failed — jar may be tampered with." >&2

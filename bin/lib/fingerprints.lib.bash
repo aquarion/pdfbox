@@ -6,7 +6,7 @@
 # Pinning a fingerprint here would break when the release manager changes; the KEYS file is sufficient.
 export PDFBOX_KEYS_URL="https://downloads.apache.org/pdfbox/KEYS"
 
-# Apache Maven release signing keys
+# Apache Maven release signing keys (not currently used — jbig2-imageio uses the PDFBox KEYS file)
 # https://downloads.apache.org/maven/KEYS
 export MAVEN_KEYS_URL="https://downloads.apache.org/maven/KEYS"
 
