@@ -57,7 +57,7 @@ docker build --build-arg PDFBOX_UID=$(id -u) -t aquarion/pdfbox .
 
 ## Image verification
 
-The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server before being included in the image. All Maven dependency JARs are verified against their SHA-512 checksums from Maven Central.
+The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server. All Maven dependency JARs are verified against their PGP signatures, with signing keys fetched from `keyserver.ubuntu.com`.
 
 
 ## Future

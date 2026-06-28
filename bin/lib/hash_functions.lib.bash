@@ -39,6 +39,52 @@ function verify_pgp_key {
     echo "PGP verification passed."
 }
 
+function verify_pgp_key_keyserver {
+    # Verifies a PGP signature by fetching the pinned key from a keyserver.
+    # We fetch by expected_fpr (not by the key ID in the signature) so the trust
+    # anchor is our pinned fingerprint, not whatever the signature claims to use.
+    # A temporary GNUPGHOME is used so imported keys do not persist in the system keyring.
+
+    local asc_url="$1"
+    local file_loc="$2"
+    local expected_fpr="$3"   # full 40-char fingerprint; may be primary key or subkey
+    local keyserver="${4:-hkps://keyserver.ubuntu.com}"
+
+    if [[ -z "$expected_fpr" ]]; then
+        echo "ERROR: expected_fpr must be provided for keyserver PGP verification." >&2
+        exit 1
+    fi
+
+    local asc_file gnupghome
+    asc_file=$(mktemp) || { echo "ERROR: Failed to create temp file for ASC." >&2; exit 1; }
+    gnupghome=$(mktemp -d) || { echo "ERROR: Failed to create temp GPG home directory." >&2; exit 1; }
+    export GNUPGHOME="$gnupghome"
+    trap 'rm -f "$asc_file"; rm -rf "$gnupghome"; unset GNUPGHOME' EXIT
+
+    curl --fail -L "$asc_url" -o "$asc_file" || {
+        echo "ERROR: Failed to download signature from $asc_url" >&2
+        exit 1
+    }
+
+    echo "Verifying PGP signature for ${file_loc} (pinned key ${expected_fpr} via ${keyserver})..."
+    gpg --keyserver "$keyserver" --recv-keys "$expected_fpr" || {
+        echo "ERROR: Failed to fetch signing key $expected_fpr from $keyserver" >&2
+        exit 1
+    }
+
+    gpg --verify "$asc_file" "$file_loc" || {
+        echo "ERROR: PGP signature verification failed — jar may be tampered with." >&2
+        rm -f "$file_loc"
+        exit 1
+    }
+
+    rm -f "$asc_file"
+    rm -rf "$gnupghome"
+    unset GNUPGHOME
+    trap - EXIT
+    echo "PGP verification passed (key $expected_fpr)."
+}
+
 
 function get_expected_sha512 {
     local jar_url="$1"
