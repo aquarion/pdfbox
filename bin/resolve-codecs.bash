@@ -34,8 +34,17 @@ DEPS_FILE="deps.txt"
 mvn -B -ntp dependency:list -DincludeScope=runtime -Dsort=true -DoutputFile="$DEPS_FILE" > /dev/null
 
 grep -E '^[[:space:]]+[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^[:space:]]+' "$DEPS_FILE" \
-    | sed -E 's/^[[:space:]]+//' \
-    | while IFS=: read -r group_id artifact_id _packaging version _rest; do
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+--.*$//' \
+    | while IFS= read -r dep_line; do
+        # Format is groupId:artifactId:packaging[:classifier]:version:scope —
+        # the classifier field is optional, so take version/scope from the end
+        # rather than by fixed position.
+        IFS=: read -ra fields <<< "$dep_line"
+        field_count=${#fields[@]}
+        group_id="${fields[0]}"
+        artifact_id="${fields[1]}"
+        version="${fields[$((field_count - 2))]}"
+
         jar_file="${artifact_id}-${version}.jar"
         jar_path="${OUTPUT_DIR}/${jar_file}"
         [[ -f "$jar_path" ]] || continue
@@ -52,6 +61,10 @@ grep -E '^[[:space:]]+[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^
                 ;;
             com.twelvemonkeys.*)
                 verify_pgp_key_keyserver "${jar_url}.asc" "$jar_path" "$TWELVEMONKEYS_FPR"
+                ;;
+            *)
+                echo "ERROR: No PGP verification rule for resolved dependency '${group_id}:${artifact_id}:${version}' — refusing to ship an unverified jar." >&2
+                exit 1
                 ;;
         esac
     done
