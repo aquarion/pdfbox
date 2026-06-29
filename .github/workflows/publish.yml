@@ -71,9 +71,11 @@ jobs:
         run: |
           version=$(curl -s "https://repo1.maven.org/maven2/org/apache/pdfbox/pdfbox/maven-metadata.xml" \
             | awk -F'[<>]' '/<version>3\./{print $3}' | sort -V | tail -1)
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
-          echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$version"
+            echo "minor=${version%.*}"
+            echo "major=${version%%.*}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
