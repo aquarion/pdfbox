@@ -126,6 +126,17 @@ function get_expected_sha512 {
     echo "$expected_hash"
 }
 
+function verify_sha256 {
+    local file_path="$1"
+    local expected_hash="$2"
+
+    echo "${expected_hash}  ${file_path}" | sha256sum -c - || {
+        echo "ERROR: SHA-256 checksum verification failed for ${file_path}." >&2
+        rm -f "${file_path}"
+        exit 1
+    }
+}
+
 function verify_sha512 {
     local file_path="$1"
     local expected_hash="$2"

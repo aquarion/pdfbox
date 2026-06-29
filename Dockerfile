@@ -38,10 +38,18 @@ RUN apk add --no-cache gnupg curl
 # bin/resolve-codecs.bash.
 COPY --from=pdfbox-jar /opt/pdfbox-version.txt ./pdfbox-version.txt
 COPY bin/codecs-pom.xml.tmpl ./codecs-pom.xml.tmpl
+COPY bin/codecs-jpeg2000-pom.xml.tmpl ./codecs-jpeg2000-pom.xml.tmpl
 COPY bin/resolve-codecs.bash ./resolve-codecs.bash
 COPY bin/lib/hash_functions.lib.bash bin/lib/fingerprints.lib.bash ./lib/
 
-RUN bash resolve-codecs.bash codecs-pom.xml.tmpl pdfbox-version.txt /opt/codecs
+# Set JPEG2000=true at build time to include jai-imageio-core and
+# jai-imageio-jpeg2000 (verified by SHA-256 hash; see issue #2).
+ARG JPEG2000=false
+RUN if [ "$JPEG2000" = "true" ]; then \
+        bash resolve-codecs.bash codecs-jpeg2000-pom.xml.tmpl pdfbox-version.txt /opt/codecs; \
+    else \
+        bash resolve-codecs.bash codecs-pom.xml.tmpl pdfbox-version.txt /opt/codecs; \
+    fi
 
 
 FROM alpine:3.24 AS alpine-base

@@ -2,14 +2,14 @@
 
 A Docker image for [Apache PDFBox](https://pdfbox.apache.org/) with full image codec support.
 
-The latest PDFBox 3.x release is fetched from Apache at build time. The following optional image codecs are bundled so that PDFs containing JBIG2 or specialised JPEG images are handled correctly:
+The latest PDFBox 3.x release is fetched from Apache at build time. The following optional image codecs are bundled:
 
 - [jbig2-imageio](https://github.com/levigo/jbig2-imageio) — JBIG2 support
 - [TwelveMonkeys imageio-jpeg](https://github.com/haraldk/TwelveMonkeys) — extended JPEG support
 - [TwelveMonkeys imageio-tiff](https://github.com/haraldk/TwelveMonkeys) — TIFF support
 - [TwelveMonkeys imageio-webp](https://github.com/haraldk/TwelveMonkeys) — WebP support
 
-JPEG2000 support is not currently included due to a revoked signing key on the last jai-imageio release. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
+A separate `-jpeg2000` variant adds JPEG2000 (JP2/JPX) support via [jai-imageio](https://github.com/jai-imageio). See [JPEG2000 variant](#jpeg2000-variant) below.
 
 ## Usage
 
@@ -47,6 +47,19 @@ Print available commands:
 docker run --rm aquarion/pdfbox --help
 ```
 
+## JPEG2000 variant
+
+Images tagged with `-jpeg2000` (e.g. `latest-jpeg2000`, `3.0.7-jpeg2000`) include two additional codecs:
+
+- [jai-imageio-core](https://github.com/jai-imageio/jai-imageio-core) — base ImageIO framework
+- [jai-imageio-jpeg2000](https://github.com/jai-imageio/jai-imageio-jpeg2000) — JPEG2000 (JP2/JPX) support
+
+```sh
+docker run --rm -v "$(pwd):/opt/pdfbox/data" ghcr.io/aquarion/pdfbox:latest-jpeg2000 <command> [options]
+```
+
+These jars are verified by pinned SHA-256 hashes rather than PGP signature — the signing subkey was revoked by the author after publication and no newer release exists. Content integrity against Maven Central is still verified. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
+
 ## Building
 
 ### File permissions
@@ -71,11 +84,13 @@ Pinned versions are fetched from `archive.apache.org`, which retains every relea
 
 The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server.
 
-The codec jars (jbig2-imageio, JAI ImageIO, TwelveMonkeys) are resolved by Maven rather than hand-fetched (see below), and are PGP-verified once resolved: jbig2-imageio against the canonical PDFBox KEYS file, and the jai-imageio/TwelveMonkeys jars against pinned fingerprints fetched from `keyserver.ubuntu.com` (falling back to `keys.openpgp.org`/`pgp.mit.edu`).
+The codec jars (jbig2-imageio, TwelveMonkeys) are resolved by Maven rather than hand-fetched (see below), and are PGP-verified once resolved: jbig2-imageio against the canonical PDFBox KEYS file, and TwelveMonkeys jars against a pinned fingerprint fetched from `keyserver.ubuntu.com` (falling back to `keys.openpgp.org`/`pgp.mit.edu`).
+
+In the `-jpeg2000` variant, jai-imageio jars are verified by pinned SHA-256 hashes instead of PGP, since the signing key was revoked.
 
 ## Codec dependency versions
 
-jbig2-imageio and the JAI ImageIO jars aren't fetched as "whatever is latest" — they're resolved by a small Maven build stage (see `bin/codecs-pom.xml.tmpl`) that inherits from PDFBox's own `pdfbox-parent` POM, picking up the exact `jbig2-imageio`/`jai-imageio` versions that the resolved PDFBox release was built and tested against. Maven also pulls in the correct transitive dependencies (e.g. TwelveMonkeys' `imageio-metadata`), which the old hand-fetch list silently missed.
+jbig2-imageio and jai-imageio aren't fetched as "whatever is latest" — they're resolved by a small Maven build stage (see `bin/codecs-pom.xml.tmpl`) that inherits from PDFBox's own `pdfbox-parent` POM, picking up the exact `jbig2-imageio`/`jai-imageio` versions that the resolved PDFBox release was built and tested against. Maven also pulls in the correct transitive dependencies (e.g. TwelveMonkeys' `imageio-metadata`), which the old hand-fetch list silently missed.
 
 TwelveMonkeys isn't a PDFBox dependency, so there's no upstream version to track — its version is pinned manually in the same template and bumped deliberately.
 
