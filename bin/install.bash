@@ -12,12 +12,12 @@ set -o pipefail # Return code of a pipeline is the right-most failure. 0 if none
 EXTRA_JAVA_LIBS_LOC=${1:-"/opt/pdfbox"}
 PDFBOX_LOC="${EXTRA_JAVA_LIBS_LOC}/pdfbox.jar"
 PDFBOX_MAJOR_VERSION=3
+PDFBOX_VERSION_PIN="${PDFBOX_VERSION:-}"
 
 
 ###################### Load helper functions from libraries ######################
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/hash_functions.lib.bash"
-source "${SCRIPT_DIR}/maven_functions.lib.bash"
 source "${SCRIPT_DIR}/apache_org_functions.lib.bash"
 source "${SCRIPT_DIR}/fingerprints.lib.bash"
 
@@ -34,9 +34,20 @@ done
 
 ####################### Main Script Logic ######################
 
-VERSION=$(get_most_recent_pdfbox_for_version "$PDFBOX_MAJOR_VERSION")
-CDN_BASE="https://dlcdn.apache.org/pdfbox/${VERSION}"
-CANONICAL_BASE="https://downloads.apache.org/pdfbox/${VERSION}"
+if [[ -n "$PDFBOX_VERSION_PIN" ]]; then
+    VERSION="$PDFBOX_VERSION_PIN"
+    echo "Using pinned PDFBox version: $VERSION" >&2
+    # dlcdn/downloads.apache.org only mirror the current release; once a newer
+    # one ships, older versions are pruned within days. archive.apache.org
+    # keeps every release indefinitely, so pinned (likely non-latest) versions
+    # must be fetched from there instead.
+    CDN_BASE="https://archive.apache.org/dist/pdfbox/${VERSION}"
+    CANONICAL_BASE="https://archive.apache.org/dist/pdfbox/${VERSION}"
+else
+    VERSION=$(get_most_recent_pdfbox_for_version "$PDFBOX_MAJOR_VERSION")
+    CDN_BASE="https://dlcdn.apache.org/pdfbox/${VERSION}"
+    CANONICAL_BASE="https://downloads.apache.org/pdfbox/${VERSION}"
+fi
 
 JAR_FILE=$(download_pdfbox_jar "$VERSION" "$PDFBOX_LOC")
 EXPECTED_HASH=$(get_expected_sha512 "${CDN_BASE}/${JAR_FILE}")
@@ -44,16 +55,8 @@ verify_sha512 "${PDFBOX_LOC}" "${EXPECTED_HASH}"
 
 verify_pgp_key "${CANONICAL_BASE}/${JAR_FILE}.asc" "$PDFBOX_KEYS_URL" "${PDFBOX_LOC}"
 
-# Apache PDFBox artifact — signed with PDFBox committer key, use PDFBox KEYS file
-get_latest_and_download "org.apache.pdfbox" "jbig2-imageio" "$EXTRA_JAVA_LIBS_LOC" "$PDFBOX_KEYS_URL"
-
-# jai-imageio artifacts — both signed by Stian Soiland-Reyes
-get_latest_and_download "com.github.jai-imageio" "jai-imageio-core" "$EXTRA_JAVA_LIBS_LOC" "" "$JAI_IMAGEIO_FPR"
-get_latest_and_download "com.github.jai-imageio" "jai-imageio-jpeg2000" "$EXTRA_JAVA_LIBS_LOC" "" "$JAI_IMAGEIO_FPR"
-
-# TwelveMonkeys artifacts — all signed by Harald Kuhr
-get_latest_and_download "com.twelvemonkeys.common" "common-lang" "$EXTRA_JAVA_LIBS_LOC" "" "$TWELVEMONKEYS_FPR"
-get_latest_and_download "com.twelvemonkeys.common" "common-io" "$EXTRA_JAVA_LIBS_LOC" "" "$TWELVEMONKEYS_FPR"
-get_latest_and_download "com.twelvemonkeys.common" "common-image" "$EXTRA_JAVA_LIBS_LOC" "" "$TWELVEMONKEYS_FPR"
-get_latest_and_download "com.twelvemonkeys.imageio" "imageio-core" "$EXTRA_JAVA_LIBS_LOC" "" "$TWELVEMONKEYS_FPR"
-get_latest_and_download "com.twelvemonkeys.imageio" "imageio-jpeg" "$EXTRA_JAVA_LIBS_LOC" "" "$TWELVEMONKEYS_FPR"
+# Resolved version is handed off to the Maven-based codec resolver stage so it
+# can pull jbig2-imageio/jai-imageio at the exact versions this PDFBox release
+# was tested against (see bin/codecs-pom.xml.tmpl). That stage also verifies
+# the resolved jars' PGP signatures using the fingerprints above.
+echo "$VERSION" > "$(dirname "$EXTRA_JAVA_LIBS_LOC")/pdfbox-version.txt"

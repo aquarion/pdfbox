@@ -55,13 +55,29 @@ The container runs as a non-root user with UID 1000. On single-user Linux system
 docker build --build-arg PDFBOX_UID=$(id -u) -t aquarion/pdfbox .
 ```
 
+### Pinning a PDFBox version
+
+By default the image builds the latest PDFBox 3.x release. To pin an exact version instead:
+
+```sh
+docker build --build-arg PDFBOX_VERSION=3.0.7 -t aquarion/pdfbox .
+```
+
+Pinned versions are fetched from `archive.apache.org`, which retains every release indefinitely, rather than `dlcdn.apache.org`/`downloads.apache.org`, which only mirror the current release. The codec jars still resolve correctly against a pinned version, since the codecs stage inherits whatever version is resolved here.
+
 ## Image verification
 
-The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server. All Maven dependency JARs are verified against their PGP signatures, with signing keys fetched from `keyserver.ubuntu.com`.
+The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server.
 
+The codec jars (jbig2-imageio, JAI ImageIO, TwelveMonkeys) are resolved by Maven rather than hand-fetched (see below), and are PGP-verified once resolved: jbig2-imageio against the canonical PDFBox KEYS file, and the jai-imageio/TwelveMonkeys jars against pinned fingerprints fetched from `keyserver.ubuntu.com` (falling back to `keys.openpgp.org`/`pgp.mit.edu`).
+
+## Codec dependency versions
+
+jbig2-imageio and the JAI ImageIO jars aren't fetched as "whatever is latest" — they're resolved by a small Maven build stage (see `bin/codecs-pom.xml.tmpl`) that inherits from PDFBox's own `pdfbox-parent` POM, picking up the exact `jbig2-imageio`/`jai-imageio` versions that the resolved PDFBox release was built and tested against. Maven also pulls in the correct transitive dependencies (e.g. TwelveMonkeys' `imageio-metadata`), which the old hand-fetch list silently missed.
+
+TwelveMonkeys isn't a PDFBox dependency, so there's no upstream version to track — its version is pinned manually in the same template and bumped deliberately.
 
 ## Future
 
-* Specifying a PDFBox version (..and then working out which library versions are compatible)
 * Options for additional JARs to include
 * IDK. Patches welcome.
