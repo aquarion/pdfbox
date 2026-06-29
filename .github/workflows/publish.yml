@@ -38,10 +38,27 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
+        if: secrets.DOCKERHUB_TOKEN != ''
         uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute image list
+        id: images
+        run: |
+          IMAGES="ghcr.io/${{ github.repository }}"
+          if [ -n "$DOCKERHUB_TOKEN" ]; then
+            IMAGES="$IMAGES"$'\n'"docker.io/$DOCKERHUB_USERNAME/pdfbox"
+          fi
+          {
+            echo "list<<EOF"
+            echo "$IMAGES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Get current PDFBox version
         id: pdfbox
@@ -57,9 +74,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: |
-            ghcr.io/${{ github.repository }}
-            docker.io/${{ vars.DOCKERHUB_USERNAME }}/pdfbox
+          images: ${{ steps.images.outputs.list }}
           flavor: |
             suffix=${{ matrix.tag_suffix }}
           tags: |
