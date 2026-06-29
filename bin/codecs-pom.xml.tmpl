@@ -3,10 +3,14 @@
   <modelVersion>4.0.0</modelVersion>
 
   <!--
-    Inheriting pdfbox-parent pulls in its jbig2.version/jai.version
-    properties, so jbig2-imageio and jai-imageio below resolve to the exact
-    versions that this PDFBox release was built and tested against, instead
-    of whatever happens to be "latest" on Maven Central.
+    Inheriting pdfbox-parent pulls in its jbig2.version property, so
+    jbig2-imageio resolves to the exact version that this PDFBox release was
+    built and tested against, instead of whatever happens to be "latest" on
+    Maven Central.
+
+    jai-imageio is excluded: the signing subkey used for the only release
+    (1.4.0) was subsequently revoked by the author, so its PGP signature can
+    no longer be trusted. See https://github.com/aquarion/pdfbox/issues/2
   -->
   <parent>
     <groupId>org.apache.pdfbox</groupId>
@@ -22,7 +26,7 @@
   <properties>
     <!-- PDFBox has no dependency on TwelveMonkeys, so there's no upstream
          version to inherit here; bump deliberately when needed. -->
-    <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
   </properties>
 
   <dependencies>
@@ -32,18 +36,18 @@
       <version>${jbig2.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.jai-imageio</groupId>
-      <artifactId>jai-imageio-core</artifactId>
-      <version>${jai.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jai-imageio</groupId>
-      <artifactId>jai-imageio-jpeg2000</artifactId>
-      <version>${jai.version}</version>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-jpeg</artifactId>
+      <version>${twelvemonkeys.version}</version>
     </dependency>
     <dependency>
       <groupId>com.twelvemonkeys.imageio</groupId>
-      <artifactId>imageio-jpeg</artifactId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-webp</artifactId>
       <version>${twelvemonkeys.version}</version>
     </dependency>
   </dependencies>
