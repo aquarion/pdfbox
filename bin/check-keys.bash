@@ -171,7 +171,7 @@ else
 fi
 echo
 
-# jai-imageio is disabled (see https://github.com/aquarion/pdfbox/issues/2)
+# jai-imageio uses SHA-256 hash pinning (not PGP) in the -jpeg2000 variant — no key to check here.
 
 # TwelveMonkeys — pinned fingerprint, fetched from keyserver
 echo "TwelveMonkeys:"

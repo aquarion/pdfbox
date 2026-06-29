@@ -59,6 +59,19 @@ grep -E '^[[:space:]]+[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^
             com.twelvemonkeys.*)
                 verify_pgp_key_keyserver "${jar_url}.asc" "$jar_path" "$TWELVEMONKEYS_FPR"
                 ;;
+            com.github.jai-imageio)
+                # PGP verification not possible: the signing subkey was revoked.
+                # Content integrity is verified against pinned SHA-256 hashes instead.
+                # See https://github.com/aquarion/pdfbox/issues/2
+                case "$artifact_id" in
+                    jai-imageio-core)     verify_sha256 "$jar_path" "$JAI_IMAGEIO_CORE_SHA256" ;;
+                    jai-imageio-jpeg2000) verify_sha256 "$jar_path" "$JAI_IMAGEIO_JPEG2000_SHA256" ;;
+                    *)
+                        echo "ERROR: No SHA-256 pin for jai-imageio artifact '${artifact_id}:${version}' — refusing to ship an unverified jar." >&2
+                        exit 1
+                        ;;
+                esac
+                ;;
             *)
                 echo "ERROR: No PGP verification rule for resolved dependency '${group_id}:${artifact_id}:${version}' — refusing to ship an unverified jar." >&2
                 exit 1

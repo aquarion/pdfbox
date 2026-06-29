@@ -126,6 +126,23 @@ function get_expected_sha512 {
     echo "$expected_hash"
 }
 
+function verify_sha256 {
+    local file_path="$1"
+    local expected_hash="$2"
+
+    if [[ -z "$file_path" || -z "$expected_hash" ]]; then
+        echo "ERROR: file_path and expected_hash must both be provided for SHA-256 verification." >&2
+        exit 1
+    fi
+
+    echo "${expected_hash}  ${file_path}" | sha256sum -c - > /dev/null || {
+        echo "ERROR: SHA-256 checksum verification failed for ${file_path}." >&2
+        rm -f "${file_path}"
+        exit 1
+    }
+    echo "SHA-256 verification passed for ${file_path}."
+}
+
 function verify_sha512 {
     local file_path="$1"
     local expected_hash="$2"

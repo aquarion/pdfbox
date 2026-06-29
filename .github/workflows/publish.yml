@@ -17,6 +17,15 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - variant: standard
+            jpeg2000: "false"
+            tag_suffix: ""
+          - variant: jpeg2000
+            jpeg2000: "true"
+            tag_suffix: "-jpeg2000"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +52,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            suffix=${{ matrix.tag_suffix }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -68,3 +79,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            JPEG2000=${{ matrix.jpeg2000 }}
