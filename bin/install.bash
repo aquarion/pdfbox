@@ -16,9 +16,8 @@ PDFBOX_MAJOR_VERSION=3
 
 ###################### Load helper functions from libraries ######################
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/hash_functions.lib.bash"
-source "${SCRIPT_DIR}/maven_functions.lib.bash"
-source "${SCRIPT_DIR}/apache_org_functions.lib.bash"
+source "${SCRIPT_DIR}/lib/hash_functions.lib.bash"
+source "${SCRIPT_DIR}/lib/apache_org_functions.lib.bash"
 
 
 ####################### Check for required dependencies ######################
@@ -43,11 +42,7 @@ verify_sha512 "${PDFBOX_LOC}" "${EXPECTED_HASH}"
 
 verify_pgp_key "${CANONICAL_BASE}/${JAR_FILE}.asc" "https://downloads.apache.org/pdfbox/KEYS" "${PDFBOX_LOC}"
 
-get_latest_and_download "org.apache.pdfbox" "jbig2-imageio" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.github.jai-imageio" "jai-imageio-core" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.github.jai-imageio" "jai-imageio-jpeg2000" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.twelvemonkeys.common" "common-lang" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.twelvemonkeys.common" "common-io" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.twelvemonkeys.common" "common-image" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.twelvemonkeys.imageio" "imageio-core" "$EXTRA_JAVA_LIBS_LOC"
-get_latest_and_download "com.twelvemonkeys.imageio" "imageio-jpeg" "$EXTRA_JAVA_LIBS_LOC"
+# Resolved version is handed off to the Maven-based codec resolver stage so it
+# can pull jbig2-imageio/jai-imageio at the exact versions this PDFBox release
+# was tested against (see bin/codecs-pom.xml.tmpl).
+echo "$VERSION" > "$(dirname "$EXTRA_JAVA_LIBS_LOC")/pdfbox-version.txt"

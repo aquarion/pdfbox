@@ -49,9 +49,14 @@ docker run --rm aquarion/pdfbox --help
 
 The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server before being included in the image.
 
+## Codec dependency versions
+
+jbig2-imageio and the JAI ImageIO jars aren't fetched as "whatever is latest" — they're resolved by a small Maven build stage (see `bin/codecs-pom.xml.tmpl`) that inherits from PDFBox's own `pdfbox-parent` POM, picking up the exact `jbig2-imageio`/`jai-imageio` versions that the resolved PDFBox release was built and tested against.
+
+TwelveMonkeys isn't a PDFBox dependency, so there's no upstream version to track — its version is pinned manually in the same template and bumped deliberately.
 
 ## Future
 
-* Specifying a PDFBox version (..and then working out which library versions are compatible)
+* Specifying a PDFBox version (currently always the latest 3.x release)
 * Options for additional JARs to include
 * IDK. Patches welcome. 
