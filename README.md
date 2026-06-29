@@ -60,6 +60,29 @@ docker run --rm -v "$(pwd):/opt/pdfbox/data" ghcr.io/aquarion/pdfbox:latest-jpeg
 
 These jars are verified by pinned SHA-256 hashes rather than PGP signature — the signing subkey was revoked by the author after publication and no newer release exists. The hashes were derived from the canonical Maven Central jars at the time of pinning; verification is against the locally-pinned values in this repository. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
 
+## Published images
+
+Images are published to:
+
+- **GitHub Container Registry**: `ghcr.io/<owner>/<repo>` (mirrors the GitHub repository name) — on every tag push, weekly schedule, and manual dispatch
+- **Docker Hub**: `<DOCKERHUB_USERNAME>/<repo>` — when `DOCKERHUB_TOKEN` is configured (see below)
+
+Each publish run builds both the standard and `-jpeg2000` variant; see [JPEG2000 variant](#jpeg2000-variant) for details on the suffixed tags.
+
+Tags applied depend on the trigger:
+
+- **Tag push** (`v*`): semver-derived tags only (`1.2.3`, `1.2`, `1`)
+- **Weekly schedule or manual dispatch**: `latest` and the current PDFBox release version tags (`3.0.7`, `3.0`, `3`)
+
+Docker Hub publishing is **opt-in**: if the `DOCKERHUB_TOKEN` secret is absent the workflow skips Docker Hub and only pushes to GHCR. Forks work out of the box without any Docker Hub credentials. If `DOCKERHUB_TOKEN` is set but `DOCKERHUB_USERNAME` is not, the workflow fails with a clear error rather than pushing to a malformed image path.
+
+To enable Docker Hub publishing, add these to the repo's Actions configuration:
+
+| Type | Name | Value |
+|------|------|-------|
+| Variable | `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| Secret | `DOCKERHUB_TOKEN` | A Docker Hub access token with read/write scope |
+
 ## Building
 
 ### File permissions
