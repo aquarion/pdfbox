@@ -5,14 +5,14 @@ function get_latest_maven_version {
     local maven_metadata_url
     maven_metadata_url="https://repo1.maven.org/maven2/$(echo "$group_id" | tr '.' '/')/$artifact_id/maven-metadata.xml"
 
-    # Fetch the Maven metadata and extract the latest version
-    # Busybox grep doesn't support Perl regex, so we use a simpler approach to extract the latest version
+    # Uses awk to parse the <latest> element; avoids grep -P which is unavailable in Busybox
     local latest_version
-    latest_version=$(curl --fail -s "$maven_metadata_url" | awk -F'[<>]' '/<latest>/{print $3; exit}') || {
+    latest_version=$(curl --fail -s "$maven_metadata_url") || {
         echo "ERROR: Failed to fetch Maven metadata from $maven_metadata_url" >&2
         exit 1
     }
-    
+    latest_version=$(echo "$latest_version" | awk -F'[<>]' '/<latest>/{print $3; exit}')
+
     if [[ -z "$latest_version" || "$latest_version" == "null" ]]; then
         echo "ERROR: Could not determine latest version for $group_id:$artifact_id from Maven Central." >&2
         exit 1
@@ -27,6 +27,9 @@ function download_maven_artifact {
     local artifact_id="$2"
     local version="$3"
     local output_dir="$4"
+    # Mutually exclusive: provide keys_url (Apache KEYS file) OR expected_fpr (keyserver fingerprint)
+    local keys_url="${5:-}"
+    local expected_fpr="${6:-}"
 
     local base_url
     base_url="https://repo1.maven.org/maven2/$(echo "$group_id" | tr '.' '/')/$artifact_id/$version"
@@ -38,12 +41,20 @@ function download_maven_artifact {
         echo "ERROR: Failed to download $jar_url" >&2
         exit 1
     }
+
+    if [[ -n "$keys_url" ]]; then
+        verify_pgp_key "${jar_url}.asc" "$keys_url" "${output_dir}/${jar_file}"
+    else
+        verify_pgp_key_keyserver "${jar_url}.asc" "${output_dir}/${jar_file}" "$expected_fpr"
+    fi
 }
 
 function get_latest_and_download {
     local group_id="$1"
     local artifact_id="$2"
     local output_dir="$3"
+    local keys_url="${4:-}"
+    local expected_fpr="${5:-}"
 
     local latest_version
     latest_version=$(get_latest_maven_version "$group_id" "$artifact_id")
@@ -51,7 +62,7 @@ function get_latest_and_download {
         echo "ERROR: Could not determine latest version for $group_id:$artifact_id" >&2
         exit 1
     fi
-    if ! download_maven_artifact "$group_id" "$artifact_id" "$latest_version" "$output_dir"; then
+    if ! download_maven_artifact "$group_id" "$artifact_id" "$latest_version" "$output_dir" "$keys_url" "$expected_fpr"; then
         echo "ERROR: Failed to download $group_id:$artifact_id:$latest_version" >&2
         exit 1
     fi
