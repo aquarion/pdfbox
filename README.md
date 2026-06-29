@@ -2,12 +2,14 @@
 
 A Docker image for [Apache PDFBox](https://pdfbox.apache.org/) with full image codec support.
 
-The latest PDFBox 3.x release is fetched from Apache at build time. The following optional image codecs are bundled so that PDFs containing JBIG2, JPEG2000, or specialised JPEG images are handled correctly:
+The latest PDFBox 3.x release is fetched from Apache at build time. The following optional image codecs are bundled so that PDFs containing JBIG2 or specialised JPEG images are handled correctly:
 
 - [jbig2-imageio](https://github.com/levigo/jbig2-imageio) — JBIG2 support
-- [jai-imageio-core](https://github.com/jai-imageio/jai-imageio-core) — JAI ImageIO core
-- [jai-imageio-jpeg2000](https://github.com/jai-imageio/jai-imageio-jpeg2000) — JPEG2000 support
-- [TwelveMonkeys imageio-jpeg](https://github.com/haraldk/TwelveMonkeys) — extended JPEG support (and its common-lang, common-io, common-image, imageio-core dependencies)
+- [TwelveMonkeys imageio-jpeg](https://github.com/haraldk/TwelveMonkeys) — extended JPEG support
+- [TwelveMonkeys imageio-tiff](https://github.com/haraldk/TwelveMonkeys) — TIFF support
+- [TwelveMonkeys imageio-webp](https://github.com/haraldk/TwelveMonkeys) — WebP support
+
+JPEG2000 support is not currently included due to a revoked signing key on the last jai-imageio release. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
 
 ## Usage
 

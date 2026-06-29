@@ -56,9 +56,6 @@ grep -E '^[[:space:]]+[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^[:space:]]+:[^
             org.apache.pdfbox)
                 verify_pgp_key "${jar_url}.asc" "$PDFBOX_KEYS_URL" "$jar_path"
                 ;;
-            com.github.jai-imageio)
-                verify_pgp_key_keyserver "${jar_url}.asc" "$jar_path" "$JAI_IMAGEIO_FPR"
-                ;;
             com.twelvemonkeys.*)
                 verify_pgp_key_keyserver "${jar_url}.asc" "$jar_path" "$TWELVEMONKEYS_FPR"
                 ;;

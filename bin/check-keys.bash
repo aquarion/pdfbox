@@ -73,7 +73,15 @@ check_expiry() {
 
 import_keys_file() {
     local url="$1"
-    curl --fail -sL "$url" | gpg --quiet --import 2>/dev/null || true
+    local tmp
+    tmp=$(mktemp)
+    if ! curl --fail -sL "$url" -o "$tmp"; then
+        echo "ERROR: Failed to fetch KEYS file from $url" >&2
+        rm -f "$tmp"
+        return 1
+    fi
+    gpg --quiet --import "$tmp" 2>/dev/null || echo "WARNING: gpg import had errors for keys from $url" >&2
+    rm -f "$tmp"
 }
 
 import_from_keyserver() {
@@ -117,43 +125,61 @@ echo
 
 # PDFBox — key identified from latest release .asc, validated against Apache KEYS file
 echo "PDFBox:"
-import_keys_file "$PDFBOX_KEYS_URL"
-PDFBOX_VERSION=$(get_most_recent_pdfbox_for_version 3 2>/dev/null)
-PDFBOX_SIGNING_FPR=$(get_signing_fpr \
-    "https://downloads.apache.org/pdfbox/${PDFBOX_VERSION}/pdfbox-app-${PDFBOX_VERSION}.jar.asc")
-if [[ -n "$PDFBOX_SIGNING_FPR" ]]; then
-    echo "Found signing key for PDFBox ${PDFBOX_VERSION}: $PDFBOX_SIGNING_FPR"
-    check_expiry "PDFBox ${PDFBOX_VERSION} release key" "$PDFBOX_SIGNING_FPR"
-else
-    echo "FAIL   PDFBox — could not determine signing key for ${PDFBOX_VERSION}"
+if ! import_keys_file "$PDFBOX_KEYS_URL"; then
+    echo "FAIL   PDFBox — could not fetch KEYS file" >&2
     exit_code=2
+else
+    PDFBOX_VERSION=$(get_most_recent_pdfbox_for_version 3)
+    if [[ -z "$PDFBOX_VERSION" ]]; then
+        echo "FAIL   PDFBox — could not determine latest 3.x version" >&2
+        exit_code=2
+    else
+        PDFBOX_SIGNING_FPR=$(get_signing_fpr \
+            "https://downloads.apache.org/pdfbox/${PDFBOX_VERSION}/pdfbox-app-${PDFBOX_VERSION}.jar.asc")
+        if [[ -n "$PDFBOX_SIGNING_FPR" ]]; then
+            echo "Found signing key for PDFBox ${PDFBOX_VERSION}: $PDFBOX_SIGNING_FPR"
+            check_expiry "PDFBox ${PDFBOX_VERSION} release key" "$PDFBOX_SIGNING_FPR"
+        else
+            echo "FAIL   PDFBox — could not determine signing key for ${PDFBOX_VERSION}" >&2
+            exit_code=2
+        fi
+    fi
 fi
 echo
 
-# jbig2-imageio — key identified from latest release .asc, validated against Apache Maven KEYS file
+# jbig2-imageio — key identified from latest release .asc, validated against PDFBox KEYS file
+# (jbig2-imageio is a PDFBox project artifact, signed by PDFBox committers)
 echo "jbig2-imageio:"
-import_keys_file "$MAVEN_KEYS_URL"
-JBIG2_VERSION=$(get_latest_maven_version "org.apache.pdfbox" "jbig2-imageio" 2>/dev/null)
-JBIG2_SIGNING_FPR=$(get_signing_fpr \
-    "https://repo1.maven.org/maven2/org/apache/pdfbox/jbig2-imageio/${JBIG2_VERSION}/jbig2-imageio-${JBIG2_VERSION}.jar.asc")
-if [[ -n "$JBIG2_SIGNING_FPR" ]]; then
-    check_expiry "jbig2-imageio ${JBIG2_VERSION} release key" "$JBIG2_SIGNING_FPR"
-else
-    echo "FAIL   jbig2-imageio — could not determine signing key for ${JBIG2_VERSION}"
+if ! import_keys_file "$PDFBOX_KEYS_URL"; then
+    echo "FAIL   jbig2-imageio — could not fetch KEYS file" >&2
     exit_code=2
+else
+    JBIG2_VERSION=$(get_latest_maven_version "org.apache.pdfbox" "jbig2-imageio")
+    if [[ -z "$JBIG2_VERSION" ]]; then
+        echo "FAIL   jbig2-imageio — could not determine latest version" >&2
+        exit_code=2
+    else
+        JBIG2_SIGNING_FPR=$(get_signing_fpr \
+            "https://repo1.maven.org/maven2/org/apache/pdfbox/jbig2-imageio/${JBIG2_VERSION}/jbig2-imageio-${JBIG2_VERSION}.jar.asc")
+        if [[ -n "$JBIG2_SIGNING_FPR" ]]; then
+            check_expiry "jbig2-imageio ${JBIG2_VERSION} release key" "$JBIG2_SIGNING_FPR"
+        else
+            echo "FAIL   jbig2-imageio — could not determine signing key for ${JBIG2_VERSION}" >&2
+            exit_code=2
+        fi
+    fi
 fi
 echo
 
-# jai-imageio — pinned fingerprint, fetched from keyserver
-echo "jai-imageio:"
-import_from_keyserver "$JAI_IMAGEIO_FPR"
-check_expiry "jai-imageio (Stian Soiland-Reyes)" "$JAI_IMAGEIO_FPR"
-echo
+# jai-imageio is disabled (see https://github.com/aquarion/pdfbox/issues/2)
 
 # TwelveMonkeys — pinned fingerprint, fetched from keyserver
 echo "TwelveMonkeys:"
-import_from_keyserver "$TWELVEMONKEYS_FPR"
-check_expiry "TwelveMonkeys (Harald Kuhr)" "$TWELVEMONKEYS_FPR"
+if import_from_keyserver "$TWELVEMONKEYS_FPR"; then
+    check_expiry "TwelveMonkeys (Harald Kuhr)" "$TWELVEMONKEYS_FPR"
+else
+    report FAIL "TwelveMonkeys (Harald Kuhr)" "$TWELVEMONKEYS_FPR" "all keyservers failed — key fetch skipped"
+fi
 echo
 
 exit $exit_code

@@ -17,7 +17,7 @@ function verify_pgp_key {
     KEYS_FILE=$(mktemp) || { echo "ERROR: Failed to create temp file for KEYS." >&2; exit 1; }
     GNUPGHOME=$(mktemp -d) || { echo "ERROR: Failed to create temp GPG home directory." >&2; exit 1; }
     export GNUPGHOME
-    trap 'rm -f "$ASC_FILE" "$KEYS_FILE"; rm -rf "$GNUPGHOME"' EXIT
+    trap 'rm -f "$ASC_FILE" "$KEYS_FILE"; rm -rf "$GNUPGHOME"; unset GNUPGHOME' EXIT
 
     echo "Verifying PGP signature for ${FILE_LOC} using keys from ${KEYS_URL}..."
     curl --fail -L "$ASC_URL" -o "$ASC_FILE"
@@ -27,14 +27,21 @@ function verify_pgp_key {
         echo "ERROR: Failed to import PGP keys from $KEYS_URL." >&2
         exit 1
     }
-    gpg --verify "$ASC_FILE" "${FILE_LOC}" || {
+    local gpg_status
+    gpg_status=$(gpg --status-fd 1 --verify "$ASC_FILE" "${FILE_LOC}") || {
         echo "ERROR: PGP signature verification failed — jar may be tampered with." >&2
         rm -f "${FILE_LOC}"
         exit 1
     }
+    if grep -qE '^\[GNUPG:\] (EXPKEYSIG|KEYEXPIRED)' <<< "$gpg_status"; then
+        echo "ERROR: PGP signature was made with an expired key — refusing to trust." >&2
+        rm -f "${FILE_LOC}"
+        exit 1
+    fi
 
     rm -f "$ASC_FILE" "$KEYS_FILE"
     rm -rf "$GNUPGHOME"
+    unset GNUPGHOME
     trap - EXIT
     echo "PGP verification passed."
 }
@@ -80,11 +87,17 @@ function verify_pgp_key_keyserver {
         exit 1
     fi
 
-    gpg --verify "$asc_file" "$file_loc" || {
+    local gpg_status
+    gpg_status=$(gpg --status-fd 1 --verify "$asc_file" "$file_loc") || {
         echo "ERROR: PGP signature verification failed — jar may be tampered with." >&2
         rm -f "$file_loc"
         exit 1
     }
+    if grep -qE '^\[GNUPG:\] (EXPKEYSIG|KEYEXPIRED)' <<< "$gpg_status"; then
+        echo "ERROR: PGP signature was made with an expired key — refusing to trust." >&2
+        rm -f "$file_loc"
+        exit 1
+    fi
 
     rm -f "$asc_file"
     rm -rf "$gnupghome"
