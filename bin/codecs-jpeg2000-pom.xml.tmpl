@@ -8,11 +8,14 @@
 
     These artifacts are verified by pinned SHA-256 hashes rather than PGP
     signature — the signing subkey was revoked by the author and no newer
-    release exists. Content integrity is still verified against Maven Central.
+    release exists. The hashes were derived from the canonical Maven Central
+    jars at the time of pinning; verification is against locally-pinned values.
     See https://github.com/aquarion/pdfbox/issues/2
 
-    The jai.version property is inherited from pdfbox-parent, which pins it to
-    the version the PDFBox release was tested against.
+    jai.version is inherited from pdfbox-parent and overridden explicitly here
+    to match the version the SHA-256 hashes were computed against. If pdfbox-
+    parent ever drops this property (PDFBox has no direct jai-imageio dep), the
+    explicit pin below keeps the build from breaking with a cryptic error.
   -->
   <parent>
     <groupId>org.apache.pdfbox</groupId>
@@ -26,6 +29,9 @@
   <packaging>pom</packaging>
 
   <properties>
+    <!-- Explicit pin matching the SHA-256 hashes in fingerprints.lib.bash.
+         Also guards against pdfbox-parent dropping jai.version in a future release. -->
+    <jai.version>1.4.0</jai.version>
     <!-- PDFBox has no dependency on TwelveMonkeys, so there's no upstream
          version to inherit here; bump deliberately when needed. -->
     <twelvemonkeys.version>3.13.1</twelvemonkeys.version>

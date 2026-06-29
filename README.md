@@ -58,7 +58,7 @@ Images tagged with `-jpeg2000` (e.g. `latest-jpeg2000`, `3.0.7-jpeg2000`) includ
 docker run --rm -v "$(pwd):/opt/pdfbox/data" ghcr.io/aquarion/pdfbox:latest-jpeg2000 <command> [options]
 ```
 
-These jars are verified by pinned SHA-256 hashes rather than PGP signature — the signing subkey was revoked by the author after publication and no newer release exists. Content integrity against Maven Central is still verified. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
+These jars are verified by pinned SHA-256 hashes rather than PGP signature — the signing subkey was revoked by the author after publication and no newer release exists. The hashes were derived from the canonical Maven Central jars at the time of pinning; verification is against the locally-pinned values in this repository. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
 
 ## Building
 
@@ -86,7 +86,7 @@ The PDFBox jar is verified against its SHA-512 checksum and PGP signature from t
 
 The codec jars (jbig2-imageio, TwelveMonkeys) are resolved by Maven rather than hand-fetched (see below), and are PGP-verified once resolved: jbig2-imageio against the canonical PDFBox KEYS file, and TwelveMonkeys jars against a pinned fingerprint fetched from `keyserver.ubuntu.com` (falling back to `keys.openpgp.org`/`pgp.mit.edu`).
 
-In the `-jpeg2000` variant, jai-imageio jars are verified by pinned SHA-256 hashes instead of PGP, since the signing key was revoked.
+In the `-jpeg2000` variant, jai-imageio jars are verified by pinned SHA-256 hashes instead of PGP, since the signing subkey was revoked.
 
 ## Codec dependency versions
 

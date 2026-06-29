@@ -47,8 +47,10 @@ COPY bin/lib/hash_functions.lib.bash bin/lib/fingerprints.lib.bash ./lib/
 ARG JPEG2000=false
 RUN if [ "$JPEG2000" = "true" ]; then \
         bash resolve-codecs.bash codecs-jpeg2000-pom.xml.tmpl pdfbox-version.txt /opt/codecs; \
-    else \
+    elif [ "$JPEG2000" = "false" ]; then \
         bash resolve-codecs.bash codecs-pom.xml.tmpl pdfbox-version.txt /opt/codecs; \
+    else \
+        echo "ERROR: JPEG2000 build arg must be 'true' or 'false', got '${JPEG2000}'." >&2; exit 1; \
     fi
 
 
