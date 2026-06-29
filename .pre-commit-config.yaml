@@ -29,4 +29,3 @@ repos:
             "--exclude-files",
             "bin/lib/fingerprints.lib.bash",
           ]
-        exclude: package.lock.json
