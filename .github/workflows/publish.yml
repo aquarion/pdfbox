@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*"
+  schedule:
+    - cron: "0 3 * * 1"  # Weekly Monday 03:00 UTC — picks up new PDFBox releases
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,6 +28,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get current PDFBox version
+        id: pdfbox
+        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          version=$(curl -s "https://repo1.maven.org/maven2/org/apache/pdfbox/pdfbox/maven-metadata.xml" \
+            | awk -F'[<>]' '/<version>3\./{print $3}' | sort -V | tail -1)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+          echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -33,11 +46,16 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=raw,value=${{ steps.pdfbox.outputs.version }},enable=${{ steps.pdfbox.outputs.version != '' }}
+            type=raw,value=${{ steps.pdfbox.outputs.minor }},enable=${{ steps.pdfbox.outputs.minor != '' }}
+            type=raw,value=${{ steps.pdfbox.outputs.major }},enable=${{ steps.pdfbox.outputs.major != '' }}
 
       - name: Verify tags were generated
         run: |
           if [ -z "$DOCKER_TAGS" ]; then
-            echo "ERROR: No Docker tags generated from '${{ github.ref_name }}'. Tag must be valid semver (e.g. v1.2.3)."
+            echo "ERROR: No Docker tags generated. On tag push, ref must be valid semver (e.g. v1.2.3)."
             exit 1
           fi
         env:
