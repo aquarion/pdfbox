@@ -69,5 +69,6 @@ TwelveMonkeys isn't a PDFBox dependency, so there's no upstream version to track
 
 ## Future
 
+* Pinning a specific PDFBox version instead of always building latest 3.x (codec compatibility is already solved either way, since the codecs stage just inherits whatever version `install.bash` resolves)
 * Options for additional JARs to include
 * IDK. Patches welcome.
