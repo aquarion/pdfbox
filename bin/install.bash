@@ -16,8 +16,9 @@ PDFBOX_MAJOR_VERSION=3
 
 ###################### Load helper functions from libraries ######################
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/lib/hash_functions.lib.bash"
-source "${SCRIPT_DIR}/lib/apache_org_functions.lib.bash"
+source "${SCRIPT_DIR}/hash_functions.lib.bash"
+source "${SCRIPT_DIR}/apache_org_functions.lib.bash"
+source "${SCRIPT_DIR}/fingerprints.lib.bash"
 
 
 ####################### Check for required dependencies ######################
@@ -40,9 +41,10 @@ JAR_FILE=$(download_pdfbox_jar "$VERSION" "$PDFBOX_LOC")
 EXPECTED_HASH=$(get_expected_sha512 "${CDN_BASE}/${JAR_FILE}")
 verify_sha512 "${PDFBOX_LOC}" "${EXPECTED_HASH}"
 
-verify_pgp_key "${CANONICAL_BASE}/${JAR_FILE}.asc" "https://downloads.apache.org/pdfbox/KEYS" "${PDFBOX_LOC}"
+verify_pgp_key "${CANONICAL_BASE}/${JAR_FILE}.asc" "$PDFBOX_KEYS_URL" "${PDFBOX_LOC}"
 
 # Resolved version is handed off to the Maven-based codec resolver stage so it
 # can pull jbig2-imageio/jai-imageio at the exact versions this PDFBox release
-# was tested against (see bin/codecs-pom.xml.tmpl).
+# was tested against (see bin/codecs-pom.xml.tmpl). That stage also verifies
+# the resolved jars' PGP signatures using the fingerprints above.
 echo "$VERSION" > "$(dirname "$EXTRA_JAVA_LIBS_LOC")/pdfbox-version.txt"
