@@ -4,11 +4,8 @@
 
 # PDFBox release signing keys — fetched from canonical Apache server (different trust root from CDN).
 # Pinning a fingerprint here would break when the release manager changes; the KEYS file is sufficient.
+# Also used for jbig2-imageio, which is a PDFBox project artifact signed by PDFBox committers.
 export PDFBOX_KEYS_URL="https://downloads.apache.org/pdfbox/KEYS"
-
-# Apache Maven release signing keys (not currently used — jbig2-imageio uses the PDFBox KEYS file)
-# https://downloads.apache.org/maven/KEYS
-export MAVEN_KEYS_URL="https://downloads.apache.org/maven/KEYS"
 
 # jai-imageio-core, jai-imageio-jpeg2000
 # Stian Soiland-Reyes <soiland-reyes@manchester.ac.uk>
