@@ -60,6 +60,22 @@ docker run --rm -v "$(pwd):/opt/pdfbox/data" ghcr.io/aquarion/pdfbox:latest-jpeg
 
 These jars are verified by pinned SHA-256 hashes rather than PGP signature — the signing subkey was revoked by the author after publication and no newer release exists. The hashes were derived from the canonical Maven Central jars at the time of pinning; verification is against the locally-pinned values in this repository. See [issue #2](https://github.com/aquarion/pdfbox/issues/2).
 
+## Published images
+
+Images are published to:
+
+- **GitHub Container Registry**: `ghcr.io/<owner>/pdfbox` — always, on every tagged release and weekly schedule
+- **Docker Hub**: `<DOCKERHUB_USERNAME>/pdfbox` — when `DOCKERHUB_TOKEN` is configured (see below)
+
+Docker Hub publishing is **opt-in**: if the `DOCKERHUB_TOKEN` secret is absent the workflow silently skips Docker Hub and only pushes to GHCR. Forks work out of the box without any Docker Hub credentials.
+
+To enable Docker Hub publishing, add these to the repo's Actions configuration:
+
+| Type | Name | Value |
+|------|------|-------|
+| Variable | `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| Secret | `DOCKERHUB_TOKEN` | A Docker Hub access token with read/write scope |
+
 ## Building
 
 ### File permissions
