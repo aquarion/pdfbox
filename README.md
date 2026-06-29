@@ -55,6 +55,16 @@ The container runs as a non-root user with UID 1000. On single-user Linux system
 docker build --build-arg PDFBOX_UID=$(id -u) -t aquarion/pdfbox .
 ```
 
+### Pinning a PDFBox version
+
+By default the image builds the latest PDFBox 3.x release. To pin an exact version instead:
+
+```sh
+docker build --build-arg PDFBOX_VERSION=3.0.7 -t aquarion/pdfbox .
+```
+
+Pinned versions are fetched from `archive.apache.org`, which retains every release indefinitely, rather than `dlcdn.apache.org`/`downloads.apache.org`, which only mirror the current release. The codec jars still resolve correctly against a pinned version, since the codecs stage inherits whatever version is resolved here.
+
 ## Image verification
 
 The PDFBox jar is verified against its SHA-512 checksum and PGP signature from the canonical Apache download server.
@@ -69,6 +79,5 @@ TwelveMonkeys isn't a PDFBox dependency, so there's no upstream version to track
 
 ## Future
 
-* Pinning a specific PDFBox version instead of always building latest 3.x (codec compatibility is already solved either way, since the codecs stage just inherits whatever version `install.bash` resolves)
 * Options for additional JARs to include
 * IDK. Patches welcome.

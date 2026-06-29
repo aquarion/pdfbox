@@ -1,5 +1,10 @@
 FROM alpine:3.24 AS pdfbox-jar
 
+# Leave empty to build the latest 3.x release; set to pin an exact version
+# (e.g. --build-arg PDFBOX_VERSION=3.0.7)
+ARG PDFBOX_VERSION=""
+ENV PDFBOX_VERSION=${PDFBOX_VERSION}
+
 WORKDIR /home
 
 RUN apk add --no-cache \
@@ -8,8 +13,9 @@ RUN apk add --no-cache \
     gnupg \
     curl
 
-# PDFBox jar (latest 3.x via Apache projects API), verified against its
-# SHA-512 checksum and PGP signature from the canonical Apache download server
+# PDFBox jar (latest 3.x via Apache projects API, unless PDFBOX_VERSION pins
+# one), verified against its SHA-512 checksum and PGP signature from the
+# canonical Apache download server
 RUN mkdir -p /opt/pdfbox-installer
 COPY bin/* /opt/pdfbox-installer/
 

@@ -12,6 +12,7 @@ set -o pipefail # Return code of a pipeline is the right-most failure. 0 if none
 EXTRA_JAVA_LIBS_LOC=${1:-"/opt/pdfbox"}
 PDFBOX_LOC="${EXTRA_JAVA_LIBS_LOC}/pdfbox.jar"
 PDFBOX_MAJOR_VERSION=3
+PDFBOX_VERSION_PIN="${PDFBOX_VERSION:-}"
 
 
 ###################### Load helper functions from libraries ######################
@@ -33,9 +34,20 @@ done
 
 ####################### Main Script Logic ######################
 
-VERSION=$(get_most_recent_pdfbox_for_version "$PDFBOX_MAJOR_VERSION")
-CDN_BASE="https://dlcdn.apache.org/pdfbox/${VERSION}"
-CANONICAL_BASE="https://downloads.apache.org/pdfbox/${VERSION}"
+if [[ -n "$PDFBOX_VERSION_PIN" ]]; then
+    VERSION="$PDFBOX_VERSION_PIN"
+    echo "Using pinned PDFBox version: $VERSION" >&2
+    # dlcdn/downloads.apache.org only mirror the current release; once a newer
+    # one ships, older versions are pruned within days. archive.apache.org
+    # keeps every release indefinitely, so pinned (likely non-latest) versions
+    # must be fetched from there instead.
+    CDN_BASE="https://archive.apache.org/dist/pdfbox/${VERSION}"
+    CANONICAL_BASE="https://archive.apache.org/dist/pdfbox/${VERSION}"
+else
+    VERSION=$(get_most_recent_pdfbox_for_version "$PDFBOX_MAJOR_VERSION")
+    CDN_BASE="https://dlcdn.apache.org/pdfbox/${VERSION}"
+    CANONICAL_BASE="https://downloads.apache.org/pdfbox/${VERSION}"
+fi
 
 JAR_FILE=$(download_pdfbox_jar "$VERSION" "$PDFBOX_LOC")
 EXPECTED_HASH=$(get_expected_sha512 "${CDN_BASE}/${JAR_FILE}")
