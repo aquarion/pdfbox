@@ -48,7 +48,11 @@ jobs:
         id: images
         run: |
           IMAGES="ghcr.io/${{ github.repository }}"
-          if [ -n "$DOCKERHUB_TOKEN" ]; then
+          if [ -n "$DOCKERHUB_TOKEN" ] && [ -z "$DOCKERHUB_USERNAME" ]; then
+            echo "ERROR: DOCKERHUB_TOKEN is set but DOCKERHUB_USERNAME variable is not. Set the DOCKERHUB_USERNAME repository variable, or remove the DOCKERHUB_TOKEN secret." >&2
+            exit 1
+          fi
+          if [ -n "$DOCKERHUB_TOKEN" ] && [ -n "$DOCKERHUB_USERNAME" ]; then
             IMAGES="$IMAGES"$'\n'"docker.io/$DOCKERHUB_USERNAME/pdfbox"
           fi
           {
