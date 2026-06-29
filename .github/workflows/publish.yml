@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*"
+  schedule:
+    - cron: "0 3 * * 1"  # Weekly Monday 03:00 UTC — picks up new PDFBox releases
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -33,11 +36,12 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
       - name: Verify tags were generated
         run: |
           if [ -z "$DOCKER_TAGS" ]; then
-            echo "ERROR: No Docker tags generated from '${{ github.ref_name }}'. Tag must be valid semver (e.g. v1.2.3)."
+            echo "ERROR: No Docker tags generated. On tag push, ref must be valid semver (e.g. v1.2.3)."
             exit 1
           fi
         env:
