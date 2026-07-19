@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install dependencies
-        run: sudo apt-get install -y --no-install-recommends gnupg curl jq
+        run: sudo apt-get install -y --no-install-recommends gnupg curl
 
       - name: Check signing key expiry
         run: bash bin/check-keys.bash
