@@ -1,25 +1,25 @@
 
 function get_most_recent_pdfbox_for_version {
     local PDFBOX_MAJOR_VERSION="$1"
-    local API_RESPONSE
-    API_RESPONSE=$(curl --fail -s -L https://projects.apache.org/json/projects/pdfbox.json) || {
-        echo "ERROR: Failed to contact Apache projects API." >&2
+    local MAVEN_METADATA_URL="https://repo1.maven.org/maven2/org/apache/pdfbox/pdfbox/maven-metadata.xml"
+    local METADATA
+    METADATA=$(curl --fail -s -L "$MAVEN_METADATA_URL") || {
+        echo "ERROR: Failed to contact Maven Central." >&2
         exit 1
     }
 
-    if [[ -z "$API_RESPONSE" ]]; then
-        echo "ERROR: Apache projects API returned an empty response." >&2
+    if [[ -z "$METADATA" ]]; then
+        echo "ERROR: Maven Central returned an empty response." >&2
         exit 1
     fi
 
-    VERSION=$(echo "$API_RESPONSE" | jq -r "[ .release[] | select(.name == \"Apache PDFBox\" and (.revision|test(\"^$PDFBOX_MAJOR_VERSION\"))).revision ][0]") || {
-        echo "ERROR: Failed to parse Apache projects API response." >&2
-        echo "$API_RESPONSE" | head -5 >&2
-        exit 1
-    }
+    # Uses awk to parse <version> elements; avoids grep -P which is unavailable in
+    # Busybox. Maven lists versions in ascending release order, so the last
+    # major-version match is the newest.
+    VERSION=$(echo "$METADATA" | awk -F'[<>]' -v major="$PDFBOX_MAJOR_VERSION" '$2 == "version" && index($3, major ".") == 1 {v = $3} END { print v }')
 
-    if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
-        echo "ERROR: Could not determine PDFBox $PDFBOX_MAJOR_VERSION.x version from Apache projects API." >&2
+    if [[ -z "$VERSION" ]]; then
+        echo "ERROR: Could not determine PDFBox $PDFBOX_MAJOR_VERSION.x version from Maven Central metadata." >&2
         exit 1
     fi
 

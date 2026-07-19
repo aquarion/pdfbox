@@ -24,7 +24,7 @@ source "${SCRIPT_DIR}/fingerprints.lib.bash"
 
 ####################### Check for required dependencies ######################
 
-SCRIPT_DEPENDS=("curl" "jq" "gpg" "sha512sum")
+SCRIPT_DEPENDS=("curl" "gpg" "sha512sum")
 for dep in "${SCRIPT_DEPENDS[@]}"; do
     if ! command -v "$dep" &> /dev/null; then
         echo "ERROR: Required dependency '$dep' is not installed." >&2

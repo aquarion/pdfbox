@@ -9,7 +9,6 @@ WORKDIR /home
 
 RUN apk add --no-cache \
     bash \
-    jq \
     gnupg \
     curl
 
