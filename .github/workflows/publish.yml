@@ -111,3 +111,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             JPEG2000=${{ matrix.jpeg2000 }}
+            PDFBOX_VERSION=${{ steps.pdfbox.outputs.version }}
